@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -21,7 +22,8 @@ import (
 type RFIDLogger struct {
 	port       serial.Port
 	isConnected bool
-	logText    *widget.Label
+	logText    *widget.RichText
+	logScroll  *container.Scroll
 	statusLabel *widget.Label
 	connectBtn *widget.Button
 	portEntry  *widget.Entry
@@ -61,7 +63,7 @@ func (r *RFIDLogger) connect() {
 	port, err := serial.Open(options)
 	if err != nil {
 		r.statusLabel.SetText(fmt.Sprintf("Ошибка подключения: %v", err))
-		r.statusLabel.Color = theme.ErrorColor()
+		r.statusLabel.Color = theme.ColorRed
 		r.statusLabel.Refresh()
 		return
 	}
@@ -85,7 +87,7 @@ func (r *RFIDLogger) disconnect() {
 	r.isConnected = false
 	r.connectBtn.SetText("Подключиться")
 	r.statusLabel.SetText("Отключено")
-	r.statusLabel.Color = theme.ErrorColor()
+	r.statusLabel.Color = theme.ColorRed
 	r.statusLabel.Refresh()
 }
 
@@ -95,21 +97,25 @@ func (r *RFIDLogger) readData() {
 		line := scanner.Text()
 		timestamp := time.Now().Format("15:04:05")
 		
-		// Форматирование вывода с подсветкой UID
-		formattedLine := r.formatRFIDLine(line)
+		// Добавляем новую строку в лог
+		r.logText.Segments = append(r.logText.Segments, &widget.TextSegment{
+			Text: fmt.Sprintf("[%s] %s\n", timestamp, line),
+			Style: widget.RichTextStyleInline,
+		})
+		r.logText.Refresh()
 		
-		r.logText.SetText(fmt.Sprintf("[%s] %s\n%s", timestamp, line, r.logText.Text))
+		// Прокрутка вниз
+		r.logScroll.ScrollToBottom()
 		
 		// Ограничиваем количество строк в логе
-		lines := strings.Split(r.logText.Text, "\n")
-		if len(lines) > 100 {
-			r.logText.SetText(strings.Join(lines[:100], "\n"))
+		if len(r.logText.Segments) > 200 {
+			r.logText.Segments = r.logText.Segments[len(r.logText.Segments)-200:]
 		}
 	}
 
 	if err := scanner.Err(); err != nil && r.isConnected {
 		r.statusLabel.SetText(fmt.Sprintf("Ошибка чтения: %v", err))
-		r.statusLabel.Color = theme.ErrorColor()
+		r.statusLabel.Color = theme.ColorRed
 		r.statusLabel.Refresh()
 	}
 }
@@ -148,9 +154,8 @@ func createMainWindow() fyne.Window {
 	logger := NewRFIDLogger()
 
 	// Создание виджетов
-	logger.logText = widget.NewLabel("Ожидание подключения к Arduino...")
-	logger.logText.Wrapping = fyne.TextWrapWord
-	logger.logText.Scroll = container.ScrollVertical
+	logger.logText = widget.NewRichText()
+	logger.logScroll = container.NewVScroll(logger.logText)
 
 	logger.statusLabel = widget.NewLabel("Статус: Отключено")
 	logger.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
@@ -190,24 +195,16 @@ func createMainWindow() fyne.Window {
 		nil,
 		nil,
 		nil,
-		logger.logText,
+		logger.logScroll,
 	)
 
 	// Добавляем меню
 	mainMenu := fyne.NewMenu("Главное",
 		fyne.NewMenuItem("О программе", func() {
-			dialog := widget.NewModalPopup(
-				container.NewVBox(
-					widget.NewLabel("Arduino RFID Logger"),
-					widget.NewLabel("Версия: 1.0.0"),
-					widget.NewLabel("Приложение для чтения логов RFID-меток с Arduino Nano + RC522"),
-					widget.NewButton("Закрыть", func() {
-						dialog.Hide()
-					}),
-				),
-				myWindow,
-			)
-			dialog.Show()
+			d := dialog.NewInformation("О программе", 
+				"Arduino RFID Logger\nВерсия: 1.0.0\nПриложение для чтения логов RFID-меток с Arduino Nano + RC522",
+				myWindow)
+			d.Show()
 		}),
 		fyne.NewMenuItem("Выход", func() {
 			if logger.isConnected {
