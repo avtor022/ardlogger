@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"image/color"
+	"io"
 	"strings"
 	"time"
 
@@ -18,14 +18,14 @@ import (
 
 // RFIDLogger хранит состояние приложения
 type RFIDLogger struct {
-	port       serial.Port
+	port        io.ReadCloser
 	isConnected bool
-	logText    *widget.RichText
-	logScroll  *container.Scroll
-	statusText *widget.RichText
-	connectBtn *widget.Button
-	portEntry  *widget.Entry
-	baudEntry  *widget.Entry
+	logText     *widget.RichText
+	logScroll   *container.Scroll
+	statusText  *widget.RichText
+	connectBtn  *widget.Button
+	portEntry   *widget.Entry
+	baudEntry   *widget.Entry
 }
 
 func NewRFIDLogger() *RFIDLogger {
@@ -64,8 +64,8 @@ func (r *RFIDLogger) connect() {
 			&widget.TextSegment{
 				Text: fmt.Sprintf("Ошибка подключения: %v", err),
 				Style: widget.RichTextStyle{
-					Color: theme.ColorRed,
-					Inline: true,
+					ColorName: theme.ColorNameError,
+					Inline:    true,
 				},
 			},
 		}
@@ -80,8 +80,8 @@ func (r *RFIDLogger) connect() {
 		&widget.TextSegment{
 			Text: "Подключено",
 			Style: widget.RichTextStyle{
-				Color: color.RGBA{R: 0, G: 180, B: 0, A: 255},
-				Inline: true,
+				ColorName: theme.ColorNameSuccess,
+				Inline:    true,
 			},
 		},
 	}
@@ -102,8 +102,8 @@ func (r *RFIDLogger) disconnect() {
 		&widget.TextSegment{
 			Text: "Отключено",
 			Style: widget.RichTextStyle{
-				Color: theme.ColorRed,
-				Inline: true,
+				ColorName: theme.ColorNameError,
+				Inline:    true,
 			},
 		},
 	}
@@ -115,17 +115,17 @@ func (r *RFIDLogger) readData() {
 	for scanner.Scan() {
 		line := scanner.Text()
 		timestamp := time.Now().Format("15:04:05")
-		
+
 		// Добавляем новую строку в лог
 		r.logText.Segments = append(r.logText.Segments, &widget.TextSegment{
-			Text: fmt.Sprintf("[%s] %s\n", timestamp, line),
+			Text:  fmt.Sprintf("[%s] %s\n", timestamp, line),
 			Style: widget.RichTextStyleInline,
 		})
 		r.logText.Refresh()
-		
+
 		// Прокрутка вниз
 		r.logScroll.ScrollToBottom()
-		
+
 		// Ограничиваем количество строк в логе
 		if len(r.logText.Segments) > 200 {
 			r.logText.Segments = r.logText.Segments[len(r.logText.Segments)-200:]
@@ -137,8 +137,8 @@ func (r *RFIDLogger) readData() {
 			&widget.TextSegment{
 				Text: fmt.Sprintf("Ошибка чтения: %v", err),
 				Style: widget.RichTextStyle{
-					Color: theme.ColorRed,
-					Inline: true,
+					ColorName: theme.ColorNameError,
+					Inline:    true,
 				},
 			},
 		}
@@ -149,8 +149,8 @@ func (r *RFIDLogger) readData() {
 func (r *RFIDLogger) formatRFIDLine(line string) string {
 	// Простая эвристика для выделения UID карт
 	// Обычно RFID-RC522 выводит UID в формате шестнадцатеричных чисел
-	if strings.Contains(strings.ToLower(line), "uid") || 
-	   len(strings.Fields(line)) > 0 && isHexLine(line) {
+	if strings.Contains(strings.ToLower(line), "uid") ||
+		len(strings.Fields(line)) > 0 && isHexLine(line) {
 		return fmt.Sprintf("** RFID: %s **", line)
 	}
 	return line
@@ -187,7 +187,6 @@ func createMainWindow() fyne.Window {
 		&widget.TextSegment{
 			Text: "Статус: Отключено",
 			Style: widget.RichTextStyle{
-				Bold: true,
 				Inline: true,
 			},
 		},
@@ -235,7 +234,7 @@ func createMainWindow() fyne.Window {
 	mainMenu := fyne.NewMainMenu(
 		fyne.NewMenu("Главное",
 			fyne.NewMenuItem("О программе", func() {
-				d := dialog.NewInformation("О программе", 
+				d := dialog.NewInformation("О программе",
 					"Arduino RFID Logger\nВерсия: 1.0.0\nПриложение для чтения логов RFID-меток с Arduino Nano + RC522",
 					myWindow)
 				d.Show()
