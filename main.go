@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"image/color"
-	"log"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/jacobsa/go-serial/serial"
@@ -24,7 +22,7 @@ type RFIDLogger struct {
 	isConnected bool
 	logText    *widget.RichText
 	logScroll  *container.Scroll
-	statusLabel *widget.Label
+	statusText *widget.RichText
 	connectBtn *widget.Button
 	portEntry  *widget.Entry
 	baudEntry  *widget.Entry
@@ -62,18 +60,32 @@ func (r *RFIDLogger) connect() {
 
 	port, err := serial.Open(options)
 	if err != nil {
-		r.statusLabel.SetText(fmt.Sprintf("Ошибка подключения: %v", err))
-		r.statusLabel.Color = theme.ColorRed
-		r.statusLabel.Refresh()
+		r.statusText.Segments = []widget.RichTextSegment{
+			&widget.TextSegment{
+				Text: fmt.Sprintf("Ошибка подключения: %v", err),
+				Style: widget.RichTextStyle{
+					Color: theme.ColorRed,
+					Inline: true,
+				},
+			},
+		}
+		r.statusText.Refresh()
 		return
 	}
 
 	r.port = port
 	r.isConnected = true
 	r.connectBtn.SetText("Отключиться")
-	r.statusLabel.SetText("Подключено")
-	r.statusLabel.Color = color.RGBA{R: 0, G: 180, B: 0, A: 255}
-	r.statusLabel.Refresh()
+	r.statusText.Segments = []widget.RichTextSegment{
+		&widget.TextSegment{
+			Text: "Подключено",
+			Style: widget.RichTextStyle{
+				Color: color.RGBA{R: 0, G: 180, B: 0, A: 255},
+				Inline: true,
+			},
+		},
+	}
+	r.statusText.Refresh()
 
 	// Запуск чтения данных в горутине
 	go r.readData()
@@ -86,9 +98,16 @@ func (r *RFIDLogger) disconnect() {
 	}
 	r.isConnected = false
 	r.connectBtn.SetText("Подключиться")
-	r.statusLabel.SetText("Отключено")
-	r.statusLabel.Color = theme.ColorRed
-	r.statusLabel.Refresh()
+	r.statusText.Segments = []widget.RichTextSegment{
+		&widget.TextSegment{
+			Text: "Отключено",
+			Style: widget.RichTextStyle{
+				Color: theme.ColorRed,
+				Inline: true,
+			},
+		},
+	}
+	r.statusText.Refresh()
 }
 
 func (r *RFIDLogger) readData() {
@@ -114,9 +133,16 @@ func (r *RFIDLogger) readData() {
 	}
 
 	if err := scanner.Err(); err != nil && r.isConnected {
-		r.statusLabel.SetText(fmt.Sprintf("Ошибка чтения: %v", err))
-		r.statusLabel.Color = theme.ColorRed
-		r.statusLabel.Refresh()
+		r.statusText.Segments = []widget.RichTextSegment{
+			&widget.TextSegment{
+				Text: fmt.Sprintf("Ошибка чтения: %v", err),
+				Style: widget.RichTextStyle{
+					Color: theme.ColorRed,
+					Inline: true,
+				},
+			},
+		}
+		r.statusText.Refresh()
 	}
 }
 
@@ -157,8 +183,15 @@ func createMainWindow() fyne.Window {
 	logger.logText = widget.NewRichText()
 	logger.logScroll = container.NewVScroll(logger.logText)
 
-	logger.statusLabel = widget.NewLabel("Статус: Отключено")
-	logger.statusLabel.TextStyle = fyne.TextStyle{Bold: true}
+	logger.statusText = widget.NewRichText(
+		&widget.TextSegment{
+			Text: "Статус: Отключено",
+			Style: widget.RichTextStyle{
+				Bold: true,
+				Inline: true,
+			},
+		},
+	)
 
 	logger.portEntry = widget.NewEntry()
 	logger.portEntry.SetPlaceHolder("/dev/ttyUSB0 или COM3")
@@ -177,7 +210,7 @@ func createMainWindow() fyne.Window {
 			widget.NewFormItem("Скорость (бод):", logger.baudEntry),
 		),
 		logger.connectBtn,
-		logger.statusLabel,
+		logger.statusText,
 	)
 
 	// Заголовок лога
@@ -199,19 +232,21 @@ func createMainWindow() fyne.Window {
 	)
 
 	// Добавляем меню
-	mainMenu := fyne.NewMenu("Главное",
-		fyne.NewMenuItem("О программе", func() {
-			d := dialog.NewInformation("О программе", 
-				"Arduino RFID Logger\nВерсия: 1.0.0\nПриложение для чтения логов RFID-меток с Arduino Nano + RC522",
-				myWindow)
-			d.Show()
-		}),
-		fyne.NewMenuItem("Выход", func() {
-			if logger.isConnected {
-				logger.disconnect()
-			}
-			myApp.Quit()
-		}),
+	mainMenu := fyne.NewMainMenu(
+		fyne.NewMenu("Главное",
+			fyne.NewMenuItem("О программе", func() {
+				d := dialog.NewInformation("О программе", 
+					"Arduino RFID Logger\nВерсия: 1.0.0\nПриложение для чтения логов RFID-меток с Arduino Nano + RC522",
+					myWindow)
+				d.Show()
+			}),
+			fyne.NewMenuItem("Выход", func() {
+				if logger.isConnected {
+					logger.disconnect()
+				}
+				myApp.Quit()
+			}),
+		),
 	)
 
 	myWindow.SetMainMenu(mainMenu)
