@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"runtime"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/jacobsa/go-serial/serial"
+	"go.bug.st/serial/enumerator"
 )
 
 // RFIDLogger хранит состояние приложения
@@ -24,8 +26,51 @@ type RFIDLogger struct {
 	logScroll   *container.Scroll
 	statusText  *widget.RichText
 	connectBtn  *widget.Button
-	portEntry   *widget.Entry
+	portSelect  *widget.Select
 	baudEntry   *widget.Entry
+}
+
+func scanPorts() []string {
+	ports, err := enumerator.GetDetailedPortsList()
+	if err != nil {
+		fmt.Println("Ошибка сканирования портов:", err)
+		return []string{"Ошибка сканирования"}
+	}
+
+	var portNames []string
+	for _, port := range ports {
+		name := port.Name
+		if port.IsUSB {
+			info := []string{}
+			if port.ProductName != "" {
+				info = append(info, port.ProductName)
+			}
+			if port.Manufacturer != "" {
+				info = append(info, port.Manufacturer)
+			}
+			if len(info) > 0 {
+				name += fmt.Sprintf(" (%s)", strings.Join(info, " - "))
+			}
+		}
+		portNames = append(portNames, name)
+	}
+
+	if len(portNames) == 0 {
+		return []string{"Порты не найдены"}
+	}
+	return portNames
+}
+
+func extractPortName(selected string) string {
+	// Убираем информацию в скобках, оставляя только имя порта
+	if idx := strings.Index(selected, " ("); idx != -1 {
+		return selected[:idx]
+	}
+	// Если это сообщение об ошибке или пустой список
+	if selected == "Порты не найдены" || selected == "Ошибка сканирования" {
+		return ""
+	}
+	return selected
 }
 
 func NewRFIDLogger() *RFIDLogger {
@@ -40,9 +85,19 @@ func (r *RFIDLogger) connect() {
 		return
 	}
 
-	portName := r.portEntry.Text
+	portName := extractPortName(r.portSelect.Selected)
 	if portName == "" {
-		portName = "/dev/ttyUSB0" // значение по умолчанию для Linux
+		r.statusText.Segments = []widget.RichTextSegment{
+			&widget.TextSegment{
+				Text: "Выберите порт из списка",
+				Style: widget.RichTextStyle{
+					ColorName: theme.ColorNameError,
+					Inline:    true,
+				},
+			},
+		}
+		r.statusText.Refresh()
+		return
 	}
 
 	baudRate := uint(9600)
@@ -179,6 +234,9 @@ func createMainWindow() fyne.Window {
 
 	logger := NewRFIDLogger()
 
+	// Сканирование доступных портов при запуске
+	portList := scanPorts()
+
 	// Создание виджетов
 	logger.logText = widget.NewRichText()
 	logger.logScroll = container.NewVScroll(logger.logText)
@@ -192,9 +250,11 @@ func createMainWindow() fyne.Window {
 		},
 	)
 
-	logger.portEntry = widget.NewEntry()
-	logger.portEntry.SetPlaceHolder("/dev/ttyUSB0 или COM3")
-	logger.portEntry.SetText("/dev/ttyUSB0")
+	// Выпадающий список портов
+	logger.portSelect = widget.NewSelect(portList, nil)
+	if len(portList) > 0 && portList[0] != "Порты не найдены" && portList[0] != "Ошибка сканирования" {
+		logger.portSelect.SetSelected(portList[0])
+	}
 
 	logger.baudEntry = widget.NewEntry()
 	logger.baudEntry.SetPlaceHolder("9600")
@@ -205,7 +265,7 @@ func createMainWindow() fyne.Window {
 	// Панель настроек подключения
 	settingsForm := container.NewVBox(
 		widget.NewForm(
-			widget.NewFormItem("Порт:", logger.portEntry),
+			widget.NewFormItem("Порт:", logger.portSelect),
 			widget.NewFormItem("Скорость (бод):", logger.baudEntry),
 		),
 		logger.connectBtn,
@@ -238,6 +298,14 @@ func createMainWindow() fyne.Window {
 					"Arduino RFID Logger\nВерсия: 1.0.0\nПриложение для чтения логов RFID-меток с Arduino Nano + RC522",
 					myWindow)
 				d.Show()
+			}),
+			fyne.NewMenuItem("Обновить порты", func() {
+				portList := scanPorts()
+				logger.portSelect.Options = portList
+				if len(portList) > 0 && portList[0] != "Порты не найдены" && portList[0] != "Ошибка сканирования" {
+					logger.portSelect.SetSelected(portList[0])
+				}
+				logger.portSelect.Refresh()
 			}),
 			fyne.NewMenuItem("Выход", func() {
 				if logger.isConnected {

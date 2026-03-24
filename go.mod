@@ -5,11 +5,13 @@ go 1.19
 require (
 	fyne.io/fyne/v2 v2.7.3
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
+	go.bug.st/serial v1.6.4
 )
 
 require (
 	fyne.io/systray v1.12.0 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/creack/goselect v0.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
