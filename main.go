@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"runtime"
 	"strings"
 	"time"
 
@@ -42,11 +41,8 @@ func scanPorts() []string {
 		name := port.Name
 		if port.IsUSB {
 			info := []string{}
-			if port.ProductName != "" {
-				info = append(info, port.ProductName)
-			}
-			if port.Manufacturer != "" {
-				info = append(info, port.Manufacturer)
+			if port.Product != "" {
+				info = append(info, port.Product)
 			}
 			if len(info) > 0 {
 				name += fmt.Sprintf(" (%s)", strings.Join(info, " - "))

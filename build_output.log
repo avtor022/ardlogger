@@ -1,0 +1,100 @@
+go: downloading fyne.io/fyne/v2 v2.7.3
+go: downloading github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
+go: downloading github.com/fsnotify/fsnotify v1.9.0
+go: downloading github.com/godbus/dbus/v5 v5.1.0
+go: downloading github.com/rymdport/portal v0.4.2
+go: downloading github.com/go-text/typesetting v0.3.3
+go: downloading github.com/yuin/goldmark v1.7.8
+go: downloading golang.org/x/image v0.24.0
+go: downloading golang.org/x/sys v0.30.0
+go: downloading github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade
+go: downloading github.com/nicksnyder/go-i18n/v2 v2.5.1
+go: downloading golang.org/x/text v0.22.0
+go: downloading github.com/fredbi/uri v1.1.1
+go: downloading github.com/fyne-io/oksvg v0.2.0
+go: downloading github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef
+go: downloading fyne.io/systray v1.12.0
+go: downloading github.com/fyne-io/image v0.1.1
+go: downloading github.com/go-gl/glfw/v3.3/glfw v0.0.0-20240506104042-037f3cc74f2a
+go: downloading github.com/BurntSushi/toml v1.5.0
+go: downloading github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
+go: downloading github.com/go-text/render v0.2.0
+go: downloading golang.org/x/net v0.35.0
+go: downloading github.com/go-gl/gl v0.0.0-20231021071112-07e5d0ea2e71
+go: downloading github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25
+go: downloading github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
+go: downloading github.com/stretchr/testify v1.11.1
+go: downloading github.com/davecgh/go-spew v1.1.1
+go: downloading github.com/pmezard/go-difflib v1.0.0
+go: downloading gopkg.in/yaml.v3 v3.0.1
+fyne.io/fyne/v2/internal/color
+golang.org/x/image/colornames
+golang.org/x/image/math/fixed
+fyne.io/fyne/v2
+golang.org/x/image/vector
+github.com/srwiley/rasterx
+fyne.io/fyne/v2/internal/build
+fyne.io/fyne/v2/internal/async
+fyne.io/fyne/v2/internal/cache
+fyne.io/fyne/v2/internal/scale
+golang.org/x/net/html/atom
+fyne.io/fyne/v2/internal/driver
+golang.org/x/net/html
+fyne.io/fyne/v2/internal/app
+golang.org/x/text/encoding/internal/identifier
+golang.org/x/text/transform
+golang.org/x/text/encoding
+golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/charmap
+golang.org/x/text/encoding/japanese
+golang.org/x/text/encoding/korean
+golang.org/x/text/encoding/simplifiedchinese
+golang.org/x/text/encoding/traditionalchinese
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/runes
+golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/tag
+golang.org/x/text/internal/language
+fyne.io/fyne/v2/internal/repository/mime
+github.com/fredbi/uri
+golang.org/x/text/internal/language/compact
+fyne.io/fyne/v2/storage/repository
+golang.org/x/text/language
+fyne.io/fyne/v2/storage
+fyne.io/fyne/v2/internal/theme
+fyne.io/fyne/v2/driver/desktop
+fyne.io/fyne/v2/data/binding
+golang.org/x/text/encoding/htmlindex
+golang.org/x/net/html/charset
+github.com/fyne-io/oksvg
+fyne.io/fyne/v2/internal/svg
+fyne.io/fyne/v2/theme
+fyne.io/fyne/v2/canvas
+fyne.io/fyne/v2/internal/widget
+fyne.io/fyne/v2/internal
+fyne.io/fyne/v2/layout
+fyne.io/fyne/v2/driver/mobile
+github.com/jeandeaual/go-locale
+github.com/nicksnyder/go-i18n/v2/i18n/template
+github.com/nicksnyder/go-i18n/v2/internal/plural
+github.com/nicksnyder/go-i18n/v2/internal
+github.com/go-text/typesetting/font/opentype
+github.com/go-text/typesetting/font/cff/interpreter
+github.com/nicksnyder/go-i18n/v2/i18n
+github.com/go-text/typesetting/language
+fyne.io/fyne/v2/lang
+golang.org/x/image/ccitt
+github.com/go-text/typesetting/font/opentype/tables
+golang.org/x/image/tiff/lzw
+golang.org/x/image/tiff
+github.com/go-text/typesetting/unicodedata
+github.com/go-text/typesetting/segmenter
+golang.org/x/text/unicode/bidi
+github.com/srwiley/oksvg
+golang.org/x/image/math/f64
+golang.org/x/image/draw
+github.com/go-text/typesetting/font/cff
+github.com/go-text/typesetting/font
+github.com/go-text/typesetting/fontscan
+github.com/go-text/typesetting/harfbuzz
+github.com/yuin/goldmark/util
