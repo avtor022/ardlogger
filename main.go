@@ -29,16 +29,22 @@ type RFIDLogger struct {
 	baudEntry   *widget.Entry
 }
 
-func scanPorts() []string {
+func scanPorts() ([]string, string) {
 	ports, err := enumerator.GetDetailedPortsList()
 	if err != nil {
 		fmt.Println("Ошибка сканирования портов:", err)
-		return []string{"Ошибка сканирования"}
+		return []string{"Ошибка сканирования"}, ""
 	}
 
 	var portNames []string
+	var arduinoPort string
+	var firstPort string
+
 	for _, port := range ports {
 		name := port.Name
+		if firstPort == "" {
+			firstPort = name
+		}
 		if port.IsUSB {
 			info := []string{}
 			if port.Product != "" {
@@ -47,14 +53,30 @@ func scanPorts() []string {
 			if len(info) > 0 {
 				name += fmt.Sprintf(" (%s)", strings.Join(info, " - "))
 			}
+			// Проверяем, является ли порт Arduino
+			productLower := strings.ToLower(port.Product)
+			if strings.Contains(productLower, "arduino") || 
+			   strings.Contains(productLower, "ch340") || 
+			   strings.Contains(productLower, "ftdi") ||
+			   strings.Contains(productLower, "cp210") {
+				if arduinoPort == "" {
+					arduinoPort = port.Name
+				}
+			}
 		}
 		portNames = append(portNames, name)
 	}
 
 	if len(portNames) == 0 {
-		return []string{"Порты не найдены"}
+		return []string{"Порты не найдены"}, ""
 	}
-	return portNames
+	
+	// Если Arduino не найден, используем первый порт
+	if arduinoPort == "" && firstPort != "" {
+		arduinoPort = firstPort
+	}
+	
+	return portNames, arduinoPort
 }
 
 func extractPortName(selected string) string {
@@ -231,7 +253,7 @@ func createMainWindow() fyne.Window {
 	logger := NewRFIDLogger()
 
 	// Сканирование доступных портов при запуске
-	portList := scanPorts()
+	portList, defaultPort := scanPorts()
 
 	// Создание виджетов
 	logger.logText = widget.NewRichText()
@@ -248,8 +270,15 @@ func createMainWindow() fyne.Window {
 
 	// Выпадающий список портов
 	logger.portSelect = widget.NewSelect(portList, nil)
-	if len(portList) > 0 && portList[0] != "Порты не найдены" && portList[0] != "Ошибка сканирования" {
-		logger.portSelect.SetSelected(portList[0])
+	if defaultPort != "" {
+		// Устанавливаем порт Arduino (или первый порт) по умолчанию
+		for _, port := range portList {
+			portName := extractPortName(port)
+			if portName == defaultPort {
+				logger.portSelect.SetSelected(port)
+				break
+			}
+		}
 	}
 
 	logger.baudEntry = widget.NewEntry()
@@ -296,10 +325,17 @@ func createMainWindow() fyne.Window {
 				d.Show()
 			}),
 			fyne.NewMenuItem("Обновить порты", func() {
-				portList := scanPorts()
+				portList, defaultPort := scanPorts()
 				logger.portSelect.Options = portList
-				if len(portList) > 0 && portList[0] != "Порты не найдены" && portList[0] != "Ошибка сканирования" {
-					logger.portSelect.SetSelected(portList[0])
+				if defaultPort != "" {
+					// Устанавливаем порт Arduino (или первый порт) по умолчанию
+					for _, port := range portList {
+						portName := extractPortName(port)
+						if portName == defaultPort {
+							logger.portSelect.SetSelected(port)
+							break
+						}
+					}
 				}
 				logger.portSelect.Refresh()
 			}),
