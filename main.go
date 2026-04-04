@@ -27,6 +27,7 @@ type RFIDLogger struct {
 	connectBtn  *widget.Button
 	portSelect  *widget.Select
 	baudEntry   *widget.Entry
+	lastRFID    string
 }
 
 func scanPorts() ([]string, string) {
@@ -189,6 +190,11 @@ func (r *RFIDLogger) readData() {
 		line := scanner.Text()
 		timestamp := time.Now().Format("15:04:05")
 
+		// Проверяем, является ли строка RFID данными и сохраняем последний UID
+		if strings.Contains(strings.ToLower(line), "uid") || isHexLine(line) {
+			r.lastRFID = strings.TrimSpace(line)
+		}
+
 		// Добавляем новую строку в лог
 		r.logText.Segments = append(r.logText.Segments, &widget.TextSegment{
 			Text:  fmt.Sprintf("[%s] %s\n", timestamp, line),
@@ -287,6 +293,16 @@ func createMainWindow() fyne.Window {
 
 	logger.connectBtn = widget.NewButton("Подключиться", logger.connect)
 
+	// Кнопка копирования RFID
+	copyRFIDBtn := widget.NewButtonWithIcon("Копировать RFID", theme.ContentCopyIcon, func() {
+		if logger.lastRFID != "" {
+			myApp.Clipboard().SetContent(logger.lastRFID)
+			dialog.ShowInformation("Скопировано", fmt.Sprintf("RFID метка скопирована в буфер обмена:\n%s", logger.lastRFID), myWindow)
+		} else {
+			dialog.ShowInformation("Нет данных", "RFID метки еще не были считаны", myWindow)
+		}
+	})
+
 	// Панель настроек подключения
 	settingsForm := container.NewVBox(
 		widget.NewForm(
@@ -294,6 +310,7 @@ func createMainWindow() fyne.Window {
 			widget.NewFormItem("Скорость (бод):", logger.baudEntry),
 		),
 		logger.connectBtn,
+		copyRFIDBtn,
 		logger.statusText,
 	)
 
